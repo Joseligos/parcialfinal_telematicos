@@ -1,0 +1,38 @@
+groups:
+  - name: system-alerts
+    rules:
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU usage > 80% en {{ $labels.instance }}"
+          description: "El uso de CPU ha superado el 80% por más de 2 minutos."
+
+      - alert: LowMemoryAvailable
+        expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 < 20
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Memoria baja en {{ $labels.instance }}"
+          description: "Solo queda {{ $value | humanizePercentage }} de RAM disponible. Intenta liberar algo de RAM"
+
+      - alert: RootDiskFull
+        expr: (node_filesystem_free_bytes{mountpoint="/",fstype=~"ext.*|xfs"} / node_filesystem_size_bytes{mountpoint="/",fstype=~"ext.*|xfs"}) * 100 < 15
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disco raíz casi lleno"
+          description: "Solo queda {{ $value | humanizePercentage }} de espacio en /. Se esta acabando el edpacio!"
+
+      - alert: FlaskDown
+        expr: up{job="flask"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Flask está CAÍDO"
+          description: "El contenedor Flask no responde"
